@@ -1,1 +1,1 @@
-# golda-novel.act2
+# golda-novel-act2
