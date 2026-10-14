@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Золотое Сердце — Акт 2: Ставки растут</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #novel-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1f233a 0%, #3e3252 50%, #1a162b 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .bg-light {
+      position: absolute;
+      top: -20%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    #sprite-box {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 72vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    #sprite-img {
+      max-height: 100%;
+      max-width: 90vw;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.6));
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    #dialogue-window {
+      position: relative;
+      z-index: 20;
+      margin: 0 16px 20px 16px;
+      background: rgba(18, 18, 28, 0.88);
+      border: 2px solid rgba(255, 215, 0, 0.45);
+      border-radius: 14px;
+      padding: 16px 18px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      min-height: 125px;
+      cursor: pointer;
+    }
+
+    #speaker-tag {
+      display: inline-block;
+      background: linear-gradient(90deg, #d4af37, #f39c12);
+      color: #1a1100;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    }
+
+    #speaker-tag.timofey { background: linear-gradient(90deg, #e67e22, #f1c40f); color: #2c1600; }
+    #speaker-tag.kolya { background: linear-gradient(90deg, #3498db, #2ecc71); color: #042416; }
+    #speaker-tag.andrey { background: linear-gradient(90deg, #e74c3c, #c0392b); color: #fff; }
+
+    #dialogue-text {
+      color: #f1f2f6;
+      font-size: 16px;
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    .tap-hint {
+      position: absolute;
+      right: 14px;
+      bottom: 8px;
+      color: rgba(255, 215, 0, 0.7);
+      font-size: 12px;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-3px); }
+    }
+
+    #choices-container {
+      position: absolute;
+      bottom: 160px;
+      left: 16px;
+      right: 16px;
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      background: rgba(25, 24, 40, 0.95);
+      border: 1.5px solid #f39c12;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-radius: 12px;
+      text-align: left;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+    }
+
+    .choice-btn:active {
+      background: #f39c12;
+      color: #1a1a1a;
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="novel-container">
+    <div class="bg-light"></div>
+    <div id="sprite-box">
+      <img id="sprite-img" src="" alt="">
+    </div>
+    <div id="choices-container"></div>
+    <div id="dialogue-window">
+      <div id="speaker-tag">Тимофей</div>
+      <div id="dialogue-text">...</div>
+      <div class="tap-hint">Тапни, чтобы продолжить ▼</div>
+    </div>
+  </div>
+
+  <script>
+    const SPR = {
+      timofey: 'timofey.jpg.jpg',
+      kolya_smile: 'kolya.jpg.jpg',
+      kolya_shock: 'kolya_shock.jpg.jpg',
+      kolya_shy: 'kolya_shy.jpg.jpg',
+      andrey: 'andrey.jpg.jpg',
+      andrey_angry: 'andrey_angry.jpg.jpg'
+    };
+
+    const story = {
+      start: [
+        {
+          speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey,
+          text: "Акт 2: Ставки растут. После удачного утра мы с Колей сели в тихом углу столовой. Настоящая голда среди серых будней."
+        },
+        {
+          speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_smile,
+          text: "Знаешь, Тимофей... Я обычно ни с кем так быстро не схожусь. Ты кажешься особенным, а не таким, как все эти парни вокруг."
+        },
+        {
+          speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey,
+          text: "(Хм, Коля явно тает. Как ответить?)",
+          choices: [
+            { text: "«Ты тоже особенный, Коль. С тобой даже воздух слаще.»", next: "step_pos_1", scoreChange: 1 },
+            { text: "«Привыкай, со мной всегда высший класс и чистая голда.»", next: "step_neu_1", scoreChange: 0 },
+            { text: "«Надеюсь, это значит, что обед ты мне всегда будешь брать?»", next: "step_neg_1", scoreChange: -1 }
+          ]
+        }
+      ],
+
+      step_pos_1: [
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shy, text: "У меня аж щёки загорелись... Спасибо, Тимофей." },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Всё для тебя.", isJump: "scene_andrey_appear" }
+      ],
+      step_neu_1: [
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_smile, text: "Хах, ну ты и уверенный в себе..." },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Иначе никак.", isJump: "scene_andrey_appear" }
+      ],
+      step_neg_1: [
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shock, text: "Погоди... это реально ты сейчас серьёзно про еду?" },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Шучу-шучу, расслабься.", isJump: "scene_andrey_appear" }
+      ],
+
+      scene_andrey_appear: [
+        {
+          speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey,
+          text: "Колян, здорова. Чё ты тут с этим кудрявым типом сидишь? Погнали на тачке кататься, матушка просила передать, чтоб ты домой шёл."
+        },
+        {
+          speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shock,
+          text: "Погоди... Андрей?! Я вообще-то занят, мы тут разговариваем!"
+        },
+        {
+          speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey,
+          text: "(Этот мажор явно портит всю романтику и претендует на мою голду... Как ответить?)",
+          choices: [
+            { text: "Спокойно встать: «Мы заняты. Двигай дальше, Андрей.»", next: "andrey_good", scoreChange: 1 },
+            { text: "Сарказм: «Чучело у тебя в зеркале. Отвали от нас.»", next: "andrey_mid", scoreChange: 0 },
+            { text: "Наглость: «Хочешь присоединиться? Скинься нам на счёт, тогда послушаем.»", next: "andrey_bad", scoreChange: -2 }
+          ]
+        }
+      ],
+
+      andrey_good: [
+        { speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey_angry, text: "Ты чё такой дерзкий, кудрявый? Смотри, как бы проблемы не начались." },
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_smile, text: "(Смотрит на Тимофея с восхищением) Ничего себе ты его осадил..." },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Со мной всегда так. Ну что, продолжим?", isJump: "final_check" }
+      ],
+
+      andrey_mid: [
+        { speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey_angry, text: "Ты нарываешься, тип!" },
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shock, text: "Погоди... тише, не ссорьтесь!" },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Да пусть идёт, воздух чище будет.", isJump: "final_check" }
+      ],
+
+      andrey_bad: [
+        { speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey_angry, text: "Ах ты паразит меркантильный! Коля, ты видишь? Он тебя просто продать хочет за копейки!" },
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shock, text: "Погоди... это реально?! Тимофей, я для тебя просто ходячий кошелёк?!" },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Да я же шучу...", isJump: "final_check" }
+      ],
+
+      final_check: [
+        {
+          speaker: "Система", tagClass: "timofey", sprite: SPR.timofey,
+          text: "Подводим итоги Акта 2...",
+          isCheck: true
+        }
+      ],
+
+      good_ending: [
+        { speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey_angry, text: "Тц, ну вы и пароноики. Ещё увидимся!" },
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shy, text: "Тимофей... спасибо, что защитил и был рядом. Никто ко мне так не относился." },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "Потому что ты — моя главная голда, Коль. Пошли отсюда." },
+        { speaker: "Автор", tagClass: "timofey", sprite: SPR.timofey, text: "[КОНЕЦ АКТА 2: ПОБЕДА И СОВМЕСТНОЕ БУДУЩЕЕ ❤️]" }
+      ],
+
+      bad_ending: [
+        { speaker: "Андрей", tagClass: "andrey", sprite: SPR.andrey, text: "Пойдём, Колян. Этот тип тебя не достоин. Я угощу тебя нормальным кофе." },
+        { speaker: "Коля", tagClass: "kolya", sprite: SPR.kolya_shock, text: "Ты прав, Андрей... Прощай, Тимофей. Я думал, ты другой." },
+        { speaker: "Тимофей", tagClass: "timofey", sprite: SPR.timofey, text: "(Коля уходит с Андреем. На столе осталась лишь холодная чашка кофе...) [КОНЕЦ АКТА 2: ПЛОХАЯ КОНЦОВКА 💔]" }
+      ]
+    };
+
+    let currentBranch = "start";
+    let stepIndex = 0;
+    let trustScore = 0;
+
+    const elSpeaker = document.getElementById("speaker-tag");
+    const elText = document.getElementById("dialogue-text");
+    const elSprite = document.getElementById("sprite-img");
+    const elChoices = document.getElementById("choices-container");
+    const elDialogWindow = document.getElementById("dialogue-window");
+
+    function renderStep() {
+      const line = story[currentBranch][stepIndex];
+      if (!line) return;
+
+      if (line.isCheck) {
+        if (trustScore >= 1) {
+          currentBranch = "good_ending";
+        } else {
+          currentBranch = "bad_ending";
+        }
+        stepIndex = 0;
+        renderStep();
+        return;
+      }
+
+      elSpeaker.textContent = line.speaker;
+      elSpeaker.className = line.tagClass || "";
+      elText.textContent = line.text;
+
+      if (line.sprite) {
+        elSprite.src = line.sprite;
+        elSprite.style.display = "block";
+      } else {
+        elSprite.style.display = "none";
+      }
+
+      if (line.choices) {
+        elChoices.innerHTML = "";
+        line.choices.forEach(c => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn";
+          btn.textContent = c.text;
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            trustScore += c.scoreChange;
+            currentBranch = c.next;
+            stepIndex = 0;
+            elChoices.style.display = "none";
+            renderStep();
+          };
+          elChoices.appendChild(btn);
+        });
+        elChoices.style.display = "flex";
+      } else {
+        elChoices.style.display = "none";
+      }
+    }
+
+    elDialogWindow.addEventListener("click", () => {
+      const line = story[currentBranch][stepIndex];
+      if (line && line.choices) return;
+
+      if (line && line.isJump) {
+        currentBranch = line.isJump;
+        stepIndex = 0;
+        renderStep();
+        return;
+      }
+
+      if (stepIndex + 1 < story[currentBranch].length) {
+        stepIndex++;
+        renderStep();
+      }
+    });
+
+    renderStep();
+  </script>
+</body>
+</html>
